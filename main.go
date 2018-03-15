@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -62,22 +63,33 @@ func main() {
 			io.WriteString(w, respond(1, "num必须是整数且大于0", ""))
 			return
 		}
-		var output []byte
-		var cmd *exec.Cmd
+		var output bytes.Buffer
+		var cmdPs *exec.Cmd
 		if sort == "mem" {
-			cmd = exec.Command("ps", "-aux", "--sort", "-pmem", "|", "head", fmt.Sprintf("-%d", num))
+			cmdPs = exec.Command("ps", "-aux", "--sort", "-pmem")
 		} else if sort == "cpu" {
-			cmd = exec.Command("ps", "-aux", "--sort", "-pcpu", "|", "head", fmt.Sprintf("-%d", num))
+			cmdPs = exec.Command("ps", "-aux", "--sort", "-pcpu")
 		} else {
 			io.WriteString(w, respond(1, "sort类型未知", ""))
 			return
 		}
-		if output, err = cmd.Output(); err != nil {
+		cmdHead := exec.Command("head", fmt.Sprintf("-%d", num))
+		cmdHead.Stdin, _ = cmdPs.StdoutPipe()
+		cmdHead.Stdout = &output
+		err = cmdHead.Start()
+		if err != nil {
+			io.WriteString(w, respond(2, err.Error(), ""))
+			fmt.Println("start head failed: ", err)
+			return
+		}
+		err = cmdPs.Run()
+		if err != nil {
 			fmt.Println("exec ps failed: ", err)
 			io.WriteString(w, respond(2, err.Error(), ""))
 			return
 		}
-		io.WriteString(w, respond(0, "success", string(output)))
+		cmdHead.Wait()
+		io.WriteString(w, respond(0, "success", output.String()))
 	})
 	fmt.Printf("start listening port %d\n", conf.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), nil)
