@@ -40,7 +40,7 @@ func main() {
 		io.WriteString(w, "Salamander制作")
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/info", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
 			io.WriteString(w, respond(1, "必须为GET请求", ""))
 			return
@@ -79,6 +79,7 @@ func main() {
 		}
 		io.WriteString(w, respond(0, "success", string(output)))
 	})
+	fmt.Printf("start listening port %d\n", conf.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", conf.Port), nil)
 }
 
