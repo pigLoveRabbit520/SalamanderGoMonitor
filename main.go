@@ -15,9 +15,9 @@ type Configuration struct {
 }
 
 type ApiRes struct {
-	Errcode int
-	Errmsg  string
-	Res     string
+	Errcode int    `json:"errcode"`
+	Errmsg  string `json:"errmsg"`
+	Res     string `json:"res"`
 }
 
 func main() {
